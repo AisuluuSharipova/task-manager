@@ -2,7 +2,7 @@ package kg.alatoo.task_management.services.impl;
 
 import kg.alatoo.task_management.dtos.UserDTO;
 import kg.alatoo.task_management.entities.User;
-import kg.alatoo.task_management.exceptions.NotFoundException;
+import kg.alatoo.task_management.mappers.UserMapper;
 import kg.alatoo.task_management.repositories.UserRepository;
 import kg.alatoo.task_management.services.UserService;
 import lombok.RequiredArgsConstructor;
@@ -17,50 +17,45 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Override
     public List<UserDTO> getAllUsers() {
-        return userRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+        return userRepository.findAll().stream()
+                .map(userMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
     public UserDTO getUserById(Long id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
-        return convertToDTO(user);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return userMapper.toDTO(user);
     }
 
     @Override
     @Transactional
     public UserDTO createUser(UserDTO userDTO) {
-        User user = new User();
-        user.setFirstName(userDTO.getFirstName());
-        user.setLastName(userDTO.getLastName());
-        user.setEmail(userDTO.getEmail());
-
-        user = userRepository.save(user);
-        return new UserDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail());
+        User user = userMapper.toEntity(userDTO);
+        return userMapper.toDTO(userRepository.save(user));
     }
 
     @Override
     @Transactional
     public UserDTO updateUser(Long id, UserDTO userDTO) {
-        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         user.setFirstName(userDTO.getFirstName());
         user.setLastName(userDTO.getLastName());
         user.setEmail(userDTO.getEmail());
-        return convertToDTO(userRepository.save(user));
+
+        return userMapper.toDTO(userRepository.save(user));
     }
 
     @Override
     @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new NotFoundException("User with id " + id + " not found");
-        }
         userRepository.deleteById(id);
-    }
-
-    private UserDTO convertToDTO(User user) {
-        return new UserDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail());
     }
 }
