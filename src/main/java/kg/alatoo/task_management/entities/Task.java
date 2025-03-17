@@ -26,4 +26,14 @@ public class Task {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User assignedUser;
+
+    public Task(String title, String description, String status, String level, Date date, Date date1, User assignedUser) {
+        this.title = title;
+        this.description = description;
+        this.status = status;
+        this.level = level;
+        this.creationDate = date;
+        this.endDate = date;
+        this.assignedUser = assignedUser;
+    }
 }

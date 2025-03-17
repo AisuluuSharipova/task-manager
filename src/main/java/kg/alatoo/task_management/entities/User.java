@@ -1,6 +1,8 @@
 package kg.alatoo.task_management.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Entity
