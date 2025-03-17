@@ -3,6 +3,7 @@ package kg.alatoo.task_management.services.impl;
 import kg.alatoo.task_management.dtos.TaskDTO;
 import kg.alatoo.task_management.entities.Task;
 import kg.alatoo.task_management.entities.User;
+import kg.alatoo.task_management.exceptions.NotFoundException;
 import kg.alatoo.task_management.repositories.TaskRepository;
 import kg.alatoo.task_management.repositories.UserRepository;
 import kg.alatoo.task_management.services.TaskService;
@@ -72,6 +73,9 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void deleteTask(Long id) {
+        if (!taskRepository.existsById(id)) {
+            throw new NotFoundException("Task with id " + id + " not found");
+        }
         taskRepository.deleteById(id);
     }
 

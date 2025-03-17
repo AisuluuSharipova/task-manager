@@ -2,6 +2,7 @@ package kg.alatoo.task_management.services.impl;
 
 import kg.alatoo.task_management.dtos.UserDTO;
 import kg.alatoo.task_management.entities.User;
+import kg.alatoo.task_management.exceptions.NotFoundException;
 import kg.alatoo.task_management.repositories.UserRepository;
 import kg.alatoo.task_management.services.UserService;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +54,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new NotFoundException("User with id " + id + " not found");
+        }
         userRepository.deleteById(id);
     }
 
