@@ -6,6 +6,7 @@ import lombok.*;
 import java.sql.Date;
 
 @Entity
+@Table(name="tasks")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,6 +19,8 @@ public class Task {
     private String title;
     private String description;
     private String status;
+    private String level;
+    private java.util.Date creationDate;
     private Date endDate;
 
     @ManyToOne
