@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,7 +43,17 @@ public class TaskServiceImpl implements TaskService {
         User assignedUser = userRepository.findById(taskDTO.getAssignedUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Task task = taskMapper.toEntity(taskDTO, assignedUser);
+        Task task = new Task(
+                null,
+                taskDTO.getTitle(),
+                taskDTO.getDescription(),
+                "New",
+                taskDTO.getLevel(),
+                new Date(System.currentTimeMillis()),
+                Date.valueOf(taskDTO.getEndDate()),
+                assignedUser
+        );
+
         return taskMapper.toDTO(taskRepository.save(task));
     }
 
