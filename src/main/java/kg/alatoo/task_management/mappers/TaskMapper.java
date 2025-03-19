@@ -5,6 +5,8 @@ import kg.alatoo.task_management.entities.Task;
 import kg.alatoo.task_management.entities.User;
 import org.springframework.stereotype.Component;
 
+import java.sql.Date;
+
 @Component
 public class TaskMapper {
 
@@ -19,7 +21,7 @@ public class TaskMapper {
                 task.getStatus(),
                 task.getLevel(),
                 task.getCreationDate(),
-                task.getEndDate().toString(),
+                task.getEndDate().toLocalDate(),
                 task.getAssignedUser() != null ? task.getAssignedUser().getId() : null
         );
     }
@@ -35,7 +37,7 @@ public class TaskMapper {
                 taskDTO.getStatus(),
                 taskDTO.getLevel(),
                 taskDTO.getCreationDate(),
-                java.sql.Date.valueOf(taskDTO.getEndDate()),
+                Date.valueOf(taskDTO.getEndDate()),
                 assignedUser
         );
     }

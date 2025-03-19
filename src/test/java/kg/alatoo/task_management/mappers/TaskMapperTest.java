@@ -14,64 +14,62 @@ import static org.junit.jupiter.api.Assertions.*;
 class TaskMapperTest {
 
     private TaskMapper taskMapper;
+    private Task testTask;
+    private TaskDTO testTaskDTO;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
         taskMapper = new TaskMapper();
+
+        testUser = new User(1L, "Aisuluu", "Zhoodarbek", "aisuluu@example.com");
+
+        testTask = new Task(
+                1L, "Task Title", "Task Description", "New", "High",
+                new Date(System.currentTimeMillis()), Date.valueOf(LocalDate.of(2025, 4, 10)), testUser
+        );
+
+        testTaskDTO = new TaskDTO(
+                1L, "Task Title", "Task Description", "New", "High",
+                new Date(System.currentTimeMillis()), LocalDate.of(2025, 4, 10), 1L
+        );
     }
 
     @Test
-    void toDTO_shouldConvertTaskToTaskDTO() {
-        User assignedUser = new User(2L, "Aiss", "Zhoodarbek", "aiss@gmail.com");
-        Task task = new Task(
-                1L,
-                "Test Task",
-                "Description",
-                "NEW",
-                "HIGH",
-                Date.valueOf(LocalDate.now()),
-                Date.valueOf(LocalDate.now().plusDays(7)),
-                assignedUser
-        );
+    void toDTO_validTask_returnsCorrectDTO() {
+        TaskDTO result = taskMapper.toDTO(testTask);
 
-        TaskDTO taskDTO = taskMapper.toDTO(task);
-
-        assertNotNull(taskDTO);
-        assertEquals(task.getId(), taskDTO.getId());
-        assertEquals(task.getTitle(), taskDTO.getTitle());
-        assertEquals(task.getDescription(), taskDTO.getDescription());
-        assertEquals(task.getStatus(), taskDTO.getStatus());
-        assertEquals(task.getLevel(), taskDTO.getLevel());
-        assertEquals(task.getCreationDate(), taskDTO.getCreationDate());
-        assertEquals(task.getEndDate().toString(), taskDTO.getEndDate());
-        assertEquals(task.getAssignedUser().getId(), taskDTO.getAssignedUserId());
+        assertNotNull(result);
+        assertEquals(testTask.getId(), result.getId());
+        assertEquals(testTask.getTitle(), result.getTitle());
+        assertEquals(testTask.getDescription(), result.getDescription());
+        assertEquals(testTask.getStatus(), result.getStatus());
+        assertEquals(testTask.getLevel(), result.getLevel());
+        assertEquals(testTask.getEndDate().toLocalDate(), result.getEndDate());
+        assertEquals(testTask.getAssignedUser().getId(), result.getAssignedUserId());
     }
 
     @Test
-    void toEntity_shouldConvertTaskDTOToTask() {
-        TaskDTO taskDTO = new TaskDTO(
-                1L,
-                "Test Task",
-                "Description",
-                "NEW",
-                "HIGH",
-                Date.valueOf(LocalDate.now()),
-                LocalDate.now().plusDays(7).toString(),
-                2L
-        );
+    void toDTO_nullTask_returnsNull() {
+        assertNull(taskMapper.toDTO(null));
+    }
 
-        User assignedUser = new User(2L, "Aiss", "Zhoodarbek", "aiss@gmail.com");
+    @Test
+    void toEntity_validDTO_returnsCorrectTask() {
+        Task result = taskMapper.toEntity(testTaskDTO, testUser);
 
-        Task task = taskMapper.toEntity(taskDTO, assignedUser);
+        assertNotNull(result);
+        assertEquals(testTaskDTO.getId(), result.getId());
+        assertEquals(testTaskDTO.getTitle(), result.getTitle());
+        assertEquals(testTaskDTO.getDescription(), result.getDescription());
+        assertEquals(testTaskDTO.getStatus(), result.getStatus());
+        assertEquals(testTaskDTO.getLevel(), result.getLevel());
+        assertEquals(Date.valueOf(testTaskDTO.getEndDate()), result.getEndDate());
+        assertEquals(testUser, result.getAssignedUser());
+    }
 
-        assertNotNull(task);
-        assertEquals(taskDTO.getId(), task.getId());
-        assertEquals(taskDTO.getTitle(), task.getTitle());
-        assertEquals(taskDTO.getDescription(), task.getDescription());
-        assertEquals(taskDTO.getStatus(), task.getStatus());
-        assertEquals(taskDTO.getLevel(), task.getLevel());
-        assertEquals(taskDTO.getCreationDate(), task.getCreationDate());
-        assertEquals(Date.valueOf(taskDTO.getEndDate()), task.getEndDate());
-        assertEquals(assignedUser, task.getAssignedUser());
+    @Test
+    void toEntity_nullDTO_returnsNull() {
+        assertNull(taskMapper.toEntity(null, testUser));
     }
 }

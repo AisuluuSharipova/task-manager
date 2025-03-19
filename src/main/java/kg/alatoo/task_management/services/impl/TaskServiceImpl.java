@@ -3,6 +3,7 @@ package kg.alatoo.task_management.services.impl;
 import kg.alatoo.task_management.dtos.TaskDTO;
 import kg.alatoo.task_management.entities.Task;
 import kg.alatoo.task_management.entities.User;
+import kg.alatoo.task_management.exceptions.NotFoundException;
 import kg.alatoo.task_management.mappers.TaskMapper;
 import kg.alatoo.task_management.repositories.TaskRepository;
 import kg.alatoo.task_management.repositories.UserRepository;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,7 +36,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public TaskDTO getTaskById(Long id) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new NotFoundException("Task not found"));
         return taskMapper.toDTO(task);
     }
 
@@ -42,7 +44,7 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     public TaskDTO createTask(TaskDTO taskDTO) {
         User assignedUser = userRepository.findById(taskDTO.getAssignedUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         Task task = new Task(
                 null,
@@ -62,16 +64,16 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     public TaskDTO updateTask(Long id, TaskDTO taskDTO) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new NotFoundException("Task not found"));
 
         User assignedUser = userRepository.findById(taskDTO.getAssignedUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         task.setTitle(taskDTO.getTitle());
         task.setDescription(taskDTO.getDescription());
         task.setStatus(taskDTO.getStatus());
         task.setLevel(taskDTO.getLevel());
-        task.setEndDate(java.sql.Date.valueOf(taskDTO.getEndDate()));
+        task.setEndDate(Date.valueOf(taskDTO.getEndDate()));
         task.setAssignedUser(assignedUser);
 
         return taskMapper.toDTO(taskRepository.save(task));
@@ -81,7 +83,7 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     public TaskDTO partiallyUpdateTask(Long id, Map<String, Object> updates) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new NotFoundException("Task not found"));
 
         updates.forEach((key, value) -> {
             switch (key) {
@@ -98,11 +100,17 @@ public class TaskServiceImpl implements TaskService {
                     task.setLevel((String) value);
                     break;
                 case "endDate":
-                    task.setEndDate(Date.valueOf((String) value));
+                    if (value instanceof String) {
+                        task.setEndDate(Date.valueOf(LocalDate.parse((String) value)));
+                    } else if (value instanceof LocalDate) {
+                        task.setEndDate(Date.valueOf((LocalDate) value));
+                    } else {
+                        throw new IllegalArgumentException("Invalid endDate format");
+                    }
                     break;
                 case "assignedUserId":
                     User assignedUser = userRepository.findById(Long.parseLong(value.toString()))
-                            .orElseThrow(() -> new RuntimeException("Assigned user not found"));
+                            .orElseThrow(() -> new NotFoundException("Assigned user not found"));
                     task.setAssignedUser(assignedUser);
                     break;
                 default:
@@ -116,6 +124,9 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void deleteTask(Long id) {
+        if (!taskRepository.existsById(id)) {
+            throw new NotFoundException("Task not found");
+        }
         taskRepository.deleteById(id);
     }
 }

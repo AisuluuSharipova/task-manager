@@ -2,7 +2,9 @@ package kg.alatoo.task_management.services.impl;
 
 import kg.alatoo.task_management.dtos.UserDTO;
 import kg.alatoo.task_management.entities.User;
+import kg.alatoo.task_management.exceptions.NotFoundException;
 import kg.alatoo.task_management.mappers.UserMapper;
+import kg.alatoo.task_management.repositories.TaskRepository;
 import kg.alatoo.task_management.repositories.UserRepository;
 import kg.alatoo.task_management.services.UserService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final TaskRepository taskRepository;
 
     @Override
     public List<UserDTO> getAllUsers() {
@@ -30,14 +33,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
         return userMapper.toDTO(user);
     }
 
     @Override
     public UserDTO getUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User with email " + email + " not found"));
+                .orElseThrow(() -> new NotFoundException("User with email " + email + " not found"));
         return userMapper.toDTO(user);
     }
 
@@ -60,7 +63,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDTO updateUser(Long id, UserDTO userDTO) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         user.setFirstName(userDTO.getFirstName());
         user.setLastName(userDTO.getLastName());
@@ -73,7 +76,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDTO partiallyUpdateUser(Long id, Map<String, Object> updates) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         updates.forEach((key, value) -> {
             switch (key) {
@@ -97,6 +100,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new NotFoundException("User not found");
+        }
         userRepository.deleteById(id);
     }
 }

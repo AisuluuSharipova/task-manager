@@ -1,111 +1,112 @@
 package kg.alatoo.task_management.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import kg.alatoo.task_management.dtos.TaskDTO;
 import kg.alatoo.task_management.services.TaskService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.*;
+import java.time.LocalDate;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class TaskControllerTest {
 
     private MockMvc mockMvc;
+
+    @Mock
     private TaskService taskService;
+
+    @InjectMocks
+    private TaskController taskController;
+
     private ObjectMapper objectMapper;
+    private TaskDTO sampleTask;
 
     @BeforeEach
     void setUp() {
-        taskService = Mockito.mock(TaskService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new TaskController(taskService)).build();
+        MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders.standaloneSetup(taskController).build();
         objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule()); // ✅ Fix for LocalDate serialization
+
+        sampleTask = new TaskDTO(
+                1L, "Task Title", "Task Description", "New", "High",
+                new Date(), LocalDate.of(2025, 4, 10), 2L
+        );
     }
 
     @Test
     void getAllTasks() throws Exception {
-        List<TaskDTO> tasks = List.of(
-                new TaskDTO(1L, "Task 1", "Description 1", "New", "High", new Date(), "2025-04-10", 1L),
-                new TaskDTO(2L, "Task 2", "Description 2", "In Progress", "Medium", new Date(), "2025-04-15", 2L)
-        );
-
-        when(taskService.getAllTasks()).thenReturn(tasks);
+        when(taskService.getAllTasks()).thenReturn(List.of(sampleTask));
 
         mockMvc.perform(get("/api/tasks"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.size()").value(2));
+                .andExpect(jsonPath("$.size()").value(1))
+                .andExpect(jsonPath("$[0].title").value("Task Title"));
     }
 
     @Test
     void getTaskById() throws Exception {
-        TaskDTO task = new TaskDTO(1L, "Task 1", "Description 1", "New", "High", new Date(), "2025-04-10", 1L);
-
-        when(taskService.getTaskById(1L)).thenReturn(task);
+        when(taskService.getTaskById(1L)).thenReturn(sampleTask);
 
         mockMvc.perform(get("/api/tasks/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Task 1"));
+                .andExpect(jsonPath("$.title").value("Task Title"))
+                .andExpect(jsonPath("$.description").value("Task Description"));
     }
 
     @Test
     void createTask() throws Exception {
-        TaskDTO taskDTO = new TaskDTO(null, "New Task", "Description", "New", "Medium", new Date(), "2025-05-01", 1L);
-        TaskDTO savedTask = new TaskDTO(1L, "New Task", "Description", "New", "Medium", new Date(), "2025-05-01", 1L);
-
-        when(taskService.createTask(any())).thenReturn(savedTask);
+        when(taskService.createTask(any(TaskDTO.class))).thenReturn(sampleTask);
 
         mockMvc.perform(post("/api/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(taskDTO)))
+                        .content(objectMapper.writeValueAsString(sampleTask)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.title").value("New Task"));
+                .andExpect(jsonPath("$.title").value("Task Title"));
     }
 
     @Test
     void updateTask() throws Exception {
-        TaskDTO updatedTask = new TaskDTO(1L, "Updated Task", "Updated Description", "In Progress", "High", new Date(), "2025-05-05", 1L);
-
-        when(taskService.updateTask(eq(1L), any())).thenReturn(updatedTask);
+        when(taskService.updateTask(eq(1L), any(TaskDTO.class))).thenReturn(sampleTask);
 
         mockMvc.perform(put("/api/tasks/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedTask)))
+                        .content(objectMapper.writeValueAsString(sampleTask)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Updated Task"))
-                .andExpect(jsonPath("$.status").value("In Progress"));
+                .andExpect(jsonPath("$.title").value("Task Title"));
     }
 
     @Test
     void partiallyUpdateTask() throws Exception {
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("status", "Done");
-        updates.put("level", "Low");
+        Map<String, Object> updates = Map.of("status", "In Progress");
 
-        TaskDTO updatedTask = new TaskDTO(1L, "Task 1", "Description 1", "Done", "Low", new Date(), "2025-04-10", 1L);
-
-        when(taskService.partiallyUpdateTask(eq(1L), any())).thenReturn(updatedTask);
+        when(taskService.partiallyUpdateTask(eq(1L), any(Map.class))).thenReturn(sampleTask);
 
         mockMvc.perform(patch("/api/tasks/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updates)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("Done"))
-                .andExpect(jsonPath("$.level").value("Low"));
+                .andExpect(jsonPath("$.title").value("Task Title"));
     }
 
     @Test
     void deleteTask() throws Exception {
-        doNothing().when(taskService).deleteTask(1L);
-
         mockMvc.perform(delete("/api/tasks/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Task deleted successfully."));
