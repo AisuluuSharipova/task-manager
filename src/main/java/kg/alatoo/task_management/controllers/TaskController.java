@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -37,6 +38,11 @@ public class TaskController {
     @PutMapping("/{id}")
     public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @RequestBody @Validated TaskDTO taskDTO) {
         return ResponseEntity.ok(taskService.updateTask(id, taskDTO));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<TaskDTO> partiallyUpdateTask(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+        return ResponseEntity.ok(taskService.partiallyUpdateTask(id, updates));
     }
 
     @DeleteMapping("/{id}")

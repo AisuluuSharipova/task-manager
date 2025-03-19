@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -49,6 +50,11 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody @Validated UserDTO userDTO) {
         return ResponseEntity.ok(userService.updateUser(id, userDTO));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<UserDTO> partiallyUpdateUser(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+        return ResponseEntity.ok(userService.partiallyUpdateUser(id, updates));
     }
 
     @DeleteMapping("/{id}")

@@ -3,6 +3,7 @@ package kg.alatoo.task_management.services;
 import kg.alatoo.task_management.dtos.UserDTO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface UserService {
 
@@ -17,6 +18,8 @@ public interface UserService {
     UserDTO createUser(UserDTO userDTO);
 
     UserDTO updateUser(Long id, UserDTO userDTO);
+
+    UserDTO partiallyUpdateUser(Long id, Map<String, Object> updates);
 
     void deleteUser(Long id);
 }

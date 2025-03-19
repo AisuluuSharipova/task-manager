@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -72,6 +73,42 @@ public class TaskServiceImpl implements TaskService {
         task.setLevel(taskDTO.getLevel());
         task.setEndDate(java.sql.Date.valueOf(taskDTO.getEndDate()));
         task.setAssignedUser(assignedUser);
+
+        return taskMapper.toDTO(taskRepository.save(task));
+    }
+
+    @Override
+    @Transactional
+    public TaskDTO partiallyUpdateTask(Long id, Map<String, Object> updates) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        updates.forEach((key, value) -> {
+            switch (key) {
+                case "title":
+                    task.setTitle((String) value);
+                    break;
+                case "description":
+                    task.setDescription((String) value);
+                    break;
+                case "status":
+                    task.setStatus((String) value);
+                    break;
+                case "level":
+                    task.setLevel((String) value);
+                    break;
+                case "endDate":
+                    task.setEndDate(Date.valueOf((String) value));
+                    break;
+                case "assignedUserId":
+                    User assignedUser = userRepository.findById(Long.parseLong(value.toString()))
+                            .orElseThrow(() -> new RuntimeException("Assigned user not found"));
+                    task.setAssignedUser(assignedUser);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid field: " + key);
+            }
+        });
 
         return taskMapper.toDTO(taskRepository.save(task));
     }

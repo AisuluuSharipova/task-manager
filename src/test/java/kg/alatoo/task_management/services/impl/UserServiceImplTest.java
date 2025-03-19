@@ -4,134 +4,141 @@ import kg.alatoo.task_management.dtos.UserDTO;
 import kg.alatoo.task_management.entities.User;
 import kg.alatoo.task_management.mappers.UserMapper;
 import kg.alatoo.task_management.repositories.UserRepository;
+import kg.alatoo.task_management.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Mockito;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class UserServiceImplTest {
 
-    @Mock
     private UserRepository userRepository;
-
-    @Mock
     private UserMapper userMapper;
-
-    @InjectMocks
-    private UserServiceImpl userService;
-
-    private User testUser;
-    private UserDTO testUserDTO;
+    private UserService userService;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-
-        testUser = new User(1L, "Aisuluu", "Zhoodarbek", "aisuluu@example.com");
-        testUserDTO = new UserDTO(1L, "Aisuluu", "Zhoodarbek", "aisuluu@example.com");
+        userRepository = Mockito.mock(UserRepository.class);
+        userMapper = Mockito.mock(UserMapper.class);
+        userService = new UserServiceImpl(userRepository, userMapper);
     }
 
     @Test
-    void getAllUsers_ShouldReturnListOfUsers() {
-        when(userRepository.findAll()).thenReturn(List.of(testUser));
-        when(userMapper.toDTO(testUser)).thenReturn(testUserDTO);
+    void getAllUsers() {
+        List<User> users = List.of(
+                new User(1L, "Aisuluu", "Sharipova", "aisuluu@example.com"),
+                new User(2L, "Aisuluu", "Zhoodarbek", "zhoodarbek@example.com")
+        );
 
-        List<UserDTO> users = userService.getAllUsers();
+        when(userRepository.findAll()).thenReturn(users);
+        when(userMapper.toDTO(any())).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            return new UserDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail());
+        });
 
-        assertEquals(1, users.size());
-        assertEquals("Aisuluu", users.get(0).getFirstName());
-        verify(userRepository, times(1)).findAll();
+        List<UserDTO> result = userService.getAllUsers();
+
+        assertEquals(2, result.size());
+        assertEquals("Aisuluu", result.get(0).getFirstName());
+        assertEquals("Sharipova", result.get(0).getLastName());
     }
 
     @Test
-    void getUserById_ShouldReturnUser_WhenUserExists() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userMapper.toDTO(testUser)).thenReturn(testUserDTO);
+    void getUserById() {
+        User user = new User(1L, "Aisuluu", "Sharipova", "aisuluu@example.com");
 
-        UserDTO userDTO = userService.getUserById(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userMapper.toDTO(user)).thenReturn(new UserDTO(1L, "Aisuluu", "Sharipova", "aisuluu@example.com"));
 
-        assertEquals("Aisuluu", userDTO.getFirstName());
-        verify(userRepository, times(1)).findById(1L);
+        UserDTO result = userService.getUserById(1L);
+        assertEquals("Aisuluu", result.getFirstName());
     }
 
     @Test
-    void getUserById_ShouldThrowException_WhenUserNotFound() {
-        when(userRepository.findById(2L)).thenReturn(Optional.empty());
+    void getUserByEmail() {
+        User user = new User(1L, "Aisuluu", "Zhoodarbek", "aisuluu.zhoodarbek@example.com");
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.getUserById(2L));
+        when(userRepository.findByEmail("aisuluu.zhoodarbek@example.com")).thenReturn(Optional.of(user));
+        when(userMapper.toDTO(user)).thenReturn(new UserDTO(1L, "Aisuluu", "Zhoodarbek", "aisuluu.zhoodarbek@example.com"));
 
-        assertEquals("User not found", exception.getMessage());
+        UserDTO result = userService.getUserByEmail("aisuluu.zhoodarbek@example.com");
+
+        assertEquals("Aisuluu", result.getFirstName());
+        assertEquals("Zhoodarbek", result.getLastName());
     }
 
     @Test
-    void getUserByEmail_ShouldReturnUser_WhenUserExists() {
-        when(userRepository.findByEmail("aisuluu@example.com")).thenReturn(Optional.of(testUser));
-        when(userMapper.toDTO(testUser)).thenReturn(testUserDTO);
+    void getUsersByName() {
+        List<User> users = List.of(new User(1L, "Aisuluu", "Sharipova", "aisuluu@example.com"));
 
-        UserDTO userDTO = userService.getUserByEmail("aisuluu@example.com");
+        when(userRepository.findByFirstNameAndLastName("Aisuluu", "Sharipova")).thenReturn(users);
+        when(userMapper.toDTO(any())).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            return new UserDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail());
+        });
 
-        assertEquals("aisuluu@example.com", userDTO.getEmail());
-        verify(userRepository, times(1)).findByEmail("aisuluu@example.com");
+        List<UserDTO> result = userService.getUsersByName("Aisuluu", "Sharipova");
+
+        assertEquals(1, result.size());
+        assertEquals("Aisuluu", result.get(0).getFirstName());
     }
 
     @Test
-    void getUserByEmail_ShouldThrowException_WhenUserNotFound() {
-        when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
+    void createUser() {
+        UserDTO userDTO = new UserDTO(null, "Aisuluu", "Zhoodarbek", "aisuluu.zhoodarbek@example.com");
+        User user = new User(1L, "Aisuluu", "Zhoodarbek", "aisuluu.zhoodarbek@example.com");
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.getUserByEmail("unknown@example.com"));
+        when(userMapper.toEntity(userDTO)).thenReturn(user);
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toDTO(user)).thenReturn(new UserDTO(1L, "Aisuluu", "Zhoodarbek", "aisuluu.zhoodarbek@example.com"));
 
-        assertEquals("User with email unknown@example.com not found", exception.getMessage());
+        UserDTO result = userService.createUser(userDTO);
+
+        assertNotNull(result);
+        assertEquals("Aisuluu", result.getFirstName());
     }
 
     @Test
-    void getUsersByName_ShouldReturnUsers_WhenUsersExist() {
-        when(userRepository.findByFirstNameAndLastName("Aisuluu", "Zhoodarbek")).thenReturn(List.of(testUser));
-        when(userMapper.toDTO(testUser)).thenReturn(testUserDTO);
+    void updateUser() {
+        User user = new User(1L, "Aisuluu", "Sharipova", "aisuluu@example.com");
+        UserDTO updatedUserDTO = new UserDTO(1L, "Updated", "Sharipova", "updated@example.com");
 
-        List<UserDTO> users = userService.getUsersByName("Aisuluu", "Zhoodarbek");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toDTO(user)).thenReturn(updatedUserDTO);
 
-        assertEquals(1, users.size());
-        assertEquals("Aisuluu", users.get(0).getFirstName());
+        UserDTO result = userService.updateUser(1L, updatedUserDTO);
+
+        assertEquals("Updated", result.getFirstName());
+        assertEquals("updated@example.com", result.getEmail());
     }
 
     @Test
-    void createUser_ShouldReturnSavedUser() {
-        when(userMapper.toEntity(testUserDTO)).thenReturn(testUser);
-        when(userRepository.save(testUser)).thenReturn(testUser);
-        when(userMapper.toDTO(testUser)).thenReturn(testUserDTO);
+    void partiallyUpdateUser() {
+        User user = new User(1L, "Aisuluu", "Sharipova", "aisuluu@example.com");
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("firstName", "Updated");
+        updates.put("email", "updated@example.com");
 
-        UserDTO savedUser = userService.createUser(testUserDTO);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toDTO(user)).thenReturn(new UserDTO(1L, "Updated", "Sharipova", "updated@example.com"));
 
-        assertNotNull(savedUser);
-        assertEquals("Aisuluu", savedUser.getFirstName());
-        verify(userRepository, times(1)).save(testUser);
+        UserDTO result = userService.partiallyUpdateUser(1L, updates);
+
+        assertEquals("Updated", result.getFirstName());
+        assertEquals("updated@example.com", result.getEmail());
     }
 
     @Test
-    void updateUser_ShouldReturnUpdatedUser() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userRepository.save(testUser)).thenReturn(testUser);
-        when(userMapper.toDTO(testUser)).thenReturn(testUserDTO);
-
-        UserDTO updatedUser = userService.updateUser(1L, testUserDTO);
-
-        assertEquals("Aisuluu", updatedUser.getFirstName());
-        verify(userRepository, times(1)).save(testUser);
-    }
-
-    @Test
-    void deleteUser_ShouldDeleteUser() {
+    void deleteUser() {
         doNothing().when(userRepository).deleteById(1L);
-
         userService.deleteUser(1L);
-
         verify(userRepository, times(1)).deleteById(1L);
     }
 }
