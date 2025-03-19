@@ -34,6 +34,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserDTO getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User with email " + email + " not found"));
+        return userMapper.toDTO(user);
+    }
+
+    @Override
+    public List<UserDTO> getUsersByName(String firstName, String lastName) {
+        List<User> users = userRepository.findByFirstNameAndLastName(firstName, lastName);
+        return users.stream()
+                .map(userMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public UserDTO createUser(UserDTO userDTO) {
         User user = userMapper.toEntity(userDTO);

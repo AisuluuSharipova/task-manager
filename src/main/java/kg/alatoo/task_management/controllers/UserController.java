@@ -28,6 +28,18 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
+    @GetMapping("/search/{email}")
+    public ResponseEntity<UserDTO> getUserByEmail(@PathVariable String email) {
+        return ResponseEntity.ok(userService.getUserByEmail(email));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<UserDTO>> getUsersByName(
+            @RequestParam String firstName,
+            @RequestParam String lastName) {
+        return ResponseEntity.ok(userService.getUsersByName(firstName, lastName));
+    }
+
     @PostMapping
     public ResponseEntity<UserDTO> createUser(@RequestBody @Valid UserDTO userDTO) {
         UserDTO savedUser = userService.createUser(userDTO);
