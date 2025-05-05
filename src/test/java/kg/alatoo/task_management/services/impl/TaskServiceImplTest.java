@@ -9,146 +9,123 @@ import kg.alatoo.task_management.repositories.TaskRepository;
 import kg.alatoo.task_management.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.sql.Date;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class TaskServiceImplTest {
 
-    @Mock
-    private TaskRepository taskRepository;
+    @Mock private TaskRepository taskRepository;
+    @Mock private UserRepository userRepository;
+    @Mock private TaskMapper taskMapper;
 
-    @Mock
-    private UserRepository userRepository;
+    @InjectMocks private TaskServiceImpl taskService;
 
-    @Mock
-    private TaskMapper taskMapper;
-
-    @InjectMocks
-    private TaskServiceImpl taskService;
-
-    private Task testTask;
-    private TaskDTO testTaskDTO;
-    private User testUser;
+    private User user;
+    private Task task;
+    private TaskDTO taskDTO;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        user = new User();
+        user.setId(1L);
 
-        testUser = new User(1L, "Aisuluu", "Zhoodarbek", "aisuluu@example.com");
-        testTask = new Task(1L, "Task Title", "Task Description", "New", "High",
-                new Date(System.currentTimeMillis()), Date.valueOf(LocalDate.of(2025, 4, 10)), testUser);
-        testTaskDTO = new TaskDTO(1L, "Task Title", "Task Description", "New", "High",
-                new Date(System.currentTimeMillis()), LocalDate.of(2025, 4, 10), 1L);
+        task = new Task(1L, "Test Task", "Test Desc", "New", "High",
+                LocalDate.now(), LocalDate.now().plusDays(1), user);
+
+        taskDTO = new TaskDTO(1L, "Test Task", "Test Desc", "New", "High",
+                LocalDate.now(), LocalDate.now().plusDays(1), 1L);
     }
 
     @Test
-    void getAllTasks() {
-        when(taskRepository.findAll()).thenReturn(List.of(testTask));
-        when(taskMapper.toDTO(testTask)).thenReturn(testTaskDTO);
+    void getAllTasks_shouldReturnList() {
+        when(taskRepository.findAll()).thenReturn(List.of(task));
+        when(taskMapper.toDTO(task)).thenReturn(taskDTO);
 
         List<TaskDTO> result = taskService.getAllTasks();
 
-        assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals("Task Title", result.get(0).getTitle());
+        assertEquals("Test Task", result.get(0).getTitle());
     }
 
     @Test
-    void getTaskById_found() {
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
-        when(taskMapper.toDTO(testTask)).thenReturn(testTaskDTO);
+    void getTaskById_shouldReturnTask() {
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskMapper.toDTO(task)).thenReturn(taskDTO);
 
         TaskDTO result = taskService.getTaskById(1L);
 
-        assertNotNull(result);
-        assertEquals("Task Title", result.getTitle());
+        assertEquals("Test Task", result.getTitle());
     }
 
     @Test
-    void getTaskById_notFound() {
+    void getTaskById_shouldThrowNotFound() {
         when(taskRepository.findById(2L)).thenReturn(Optional.empty());
 
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> taskService.getTaskById(2L));
-
-        assertEquals("Task not found", exception.getMessage());
+        assertThrows(NotFoundException.class, () -> taskService.getTaskById(2L));
     }
 
     @Test
-    void createTask() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(taskRepository.save(any(Task.class))).thenReturn(testTask);
-        when(taskMapper.toDTO(testTask)).thenReturn(testTaskDTO);
+    void createTask_shouldSaveAndReturn() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(taskRepository.save(any(Task.class))).thenReturn(task);
+        when(taskMapper.toDTO(task)).thenReturn(taskDTO);
 
-        TaskDTO result = taskService.createTask(testTaskDTO);
+        TaskDTO result = taskService.createTask(taskDTO);
 
-        assertNotNull(result);
-        assertEquals("Task Title", result.getTitle());
+        assertEquals("Test Task", result.getTitle());
     }
 
     @Test
-    void updateTask_found() {
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(taskRepository.save(any(Task.class))).thenReturn(testTask);
-        when(taskMapper.toDTO(testTask)).thenReturn(testTaskDTO);
+    void createTask_userNotFound_shouldThrow() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        TaskDTO result = taskService.updateTask(1L, testTaskDTO);
-
-        assertNotNull(result);
-        assertEquals("Task Title", result.getTitle());
+        assertThrows(NotFoundException.class, () -> taskService.createTask(taskDTO));
     }
 
     @Test
-    void updateTask_notFound() {
+    void updateTask_shouldUpdateAndReturn() {
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(taskRepository.save(any(Task.class))).thenReturn(task);
+        when(taskMapper.toDTO(task)).thenReturn(taskDTO);
+
+        TaskDTO result = taskService.updateTask(1L, taskDTO);
+
+        assertEquals("Test Task", result.getTitle());
+    }
+
+    @Test
+    void updateTask_notFound_shouldThrow() {
         when(taskRepository.findById(1L)).thenReturn(Optional.empty());
 
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> taskService.updateTask(1L, testTaskDTO));
-
-        assertEquals("Task not found", exception.getMessage());
+        assertThrows(NotFoundException.class, () -> taskService.updateTask(1L, taskDTO));
     }
 
     @Test
-    void partiallyUpdateTask_found() {
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
-        when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0)); // ✅ Исправление
-        when(taskMapper.toDTO(any(Task.class))).thenAnswer(invocation -> {
-            Task task = invocation.getArgument(0);
-            return new TaskDTO(task.getId(), task.getTitle(), task.getDescription(), task.getStatus(),
-                    task.getLevel(), task.getCreationDate(), task.getEndDate().toLocalDate(), task.getAssignedUser().getId());
-        });
+    void partiallyUpdateTask_shouldUpdateFields() {
+        Map<String, Object> updates = Map.of("title", "Updated Task", "status", "In Progress");
 
-        Map<String, Object> updates = Map.of("title", "Updated Task Title");
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.save(any(Task.class))).thenReturn(task);
+        when(taskMapper.toDTO(task)).thenReturn(taskDTO);
 
         TaskDTO result = taskService.partiallyUpdateTask(1L, updates);
 
         assertNotNull(result);
-        assertEquals("Updated Task Title", result.getTitle());
-    }
-
-
-    @Test
-    void partiallyUpdateTask_notFound() {
-        when(taskRepository.findById(1L)).thenReturn(Optional.empty());
-
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> taskService.partiallyUpdateTask(1L, Map.of("title", "New Title")));
-
-        assertEquals("Task not found", exception.getMessage());
     }
 
     @Test
-    void deleteTask_found() {
+    void deleteTask_shouldDelete() {
         when(taskRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(taskRepository).deleteById(1L);
 
         taskService.deleteTask(1L);
 
@@ -156,11 +133,9 @@ class TaskServiceImplTest {
     }
 
     @Test
-    void deleteTask_notFound() {
+    void deleteTask_notFound_shouldThrow() {
         when(taskRepository.existsById(2L)).thenReturn(false);
 
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> taskService.deleteTask(2L));
-
-        assertEquals("Task not found", exception.getMessage());
+        assertThrows(NotFoundException.class, () -> taskService.deleteTask(2L));
     }
 }

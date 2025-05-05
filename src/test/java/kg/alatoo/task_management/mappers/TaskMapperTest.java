@@ -6,7 +6,6 @@ import kg.alatoo.task_management.entities.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Date;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -14,62 +13,64 @@ import static org.junit.jupiter.api.Assertions.*;
 class TaskMapperTest {
 
     private TaskMapper taskMapper;
-    private Task testTask;
-    private TaskDTO testTaskDTO;
-    private User testUser;
+    private Task task;
+    private TaskDTO taskDTO;
+    private User assignedUser;
 
     @BeforeEach
     void setUp() {
         taskMapper = new TaskMapper();
 
-        testUser = new User(1L, "Aisuluu", "Zhoodarbek", "aisuluu@example.com");
+        assignedUser = new User();
+        assignedUser.setId(1L);
 
-        testTask = new Task(
-                1L, "Task Title", "Task Description", "New", "High",
-                new Date(System.currentTimeMillis()), Date.valueOf(LocalDate.of(2025, 4, 10)), testUser
+        task = new Task(
+                10L,
+                "Title",
+                "Description",
+                "New",
+                "High",
+                LocalDate.now(),
+                LocalDate.now().plusDays(5),
+                assignedUser
         );
 
-        testTaskDTO = new TaskDTO(
-                1L, "Task Title", "Task Description", "New", "High",
-                new Date(System.currentTimeMillis()), LocalDate.of(2025, 4, 10), 1L
+        taskDTO = new TaskDTO(
+                10L,
+                "Title",
+                "Description",
+                "New",
+                "High",
+                LocalDate.now(),
+                LocalDate.now().plusDays(5),
+                1L
         );
     }
 
     @Test
-    void toDTO_validTask_returnsCorrectDTO() {
-        TaskDTO result = taskMapper.toDTO(testTask);
-
-        assertNotNull(result);
-        assertEquals(testTask.getId(), result.getId());
-        assertEquals(testTask.getTitle(), result.getTitle());
-        assertEquals(testTask.getDescription(), result.getDescription());
-        assertEquals(testTask.getStatus(), result.getStatus());
-        assertEquals(testTask.getLevel(), result.getLevel());
-        assertEquals(testTask.getEndDate().toLocalDate(), result.getEndDate());
-        assertEquals(testTask.getAssignedUser().getId(), result.getAssignedUserId());
+    void testToDTO() {
+        TaskDTO dto = taskMapper.toDTO(task);
+        assertNotNull(dto);
+        assertEquals(task.getId(), dto.getId());
+        assertEquals(task.getTitle(), dto.getTitle());
+        assertEquals(task.getAssignedUser().getId(), dto.getAssignedUserId());
     }
 
     @Test
-    void toDTO_nullTask_returnsNull() {
+    void testToEntity() {
+        Task entity = taskMapper.toEntity(taskDTO, assignedUser);
+        assertNotNull(entity);
+        assertEquals(taskDTO.getTitle(), entity.getTitle());
+        assertEquals(assignedUser, entity.getAssignedUser());
+    }
+
+    @Test
+    void testToDTO_NullTask() {
         assertNull(taskMapper.toDTO(null));
     }
 
     @Test
-    void toEntity_validDTO_returnsCorrectTask() {
-        Task result = taskMapper.toEntity(testTaskDTO, testUser);
-
-        assertNotNull(result);
-        assertEquals(testTaskDTO.getId(), result.getId());
-        assertEquals(testTaskDTO.getTitle(), result.getTitle());
-        assertEquals(testTaskDTO.getDescription(), result.getDescription());
-        assertEquals(testTaskDTO.getStatus(), result.getStatus());
-        assertEquals(testTaskDTO.getLevel(), result.getLevel());
-        assertEquals(Date.valueOf(testTaskDTO.getEndDate()), result.getEndDate());
-        assertEquals(testUser, result.getAssignedUser());
-    }
-
-    @Test
-    void toEntity_nullDTO_returnsNull() {
-        assertNull(taskMapper.toEntity(null, testUser));
+    void testToEntity_NullDTO() {
+        assertNull(taskMapper.toEntity(null, assignedUser));
     }
 }

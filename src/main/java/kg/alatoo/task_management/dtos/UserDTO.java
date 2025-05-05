@@ -1,5 +1,6 @@
 package kg.alatoo.task_management.dtos;
 
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,5 +22,6 @@ public class UserDTO {
 
     @NotNull(message = "Email is required")
     @Email(message = "Invalid email format")
+    @Column(unique = true)
     private String email;
 }

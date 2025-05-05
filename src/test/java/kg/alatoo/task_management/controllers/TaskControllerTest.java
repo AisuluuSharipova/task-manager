@@ -1,9 +1,9 @@
 package kg.alatoo.task_management.controllers;
 
-import kg.alatoo.task_management.dtos.TaskDTO;
-import kg.alatoo.task_management.services.TaskService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import kg.alatoo.task_management.dtos.TaskDTO;
+import kg.alatoo.task_management.services.TaskService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -14,7 +14,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -42,11 +41,17 @@ class TaskControllerTest {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(taskController).build();
         objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule()); // ✅ Fix for LocalDate serialization
+        objectMapper.registerModule(new JavaTimeModule()); // для поддержки LocalDate
 
         sampleTask = new TaskDTO(
-                1L, "Task Title", "Task Description", "New", "High",
-                new Date(), LocalDate.of(2025, 4, 10), 2L
+                1L,
+                "Task Title",
+                "Task Description",
+                "New",
+                "High",
+                LocalDate.of(2025, 5, 5), // ✅ заменили на LocalDate
+                LocalDate.of(2025, 5, 10),
+                2L
         );
     }
 

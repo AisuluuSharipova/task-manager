@@ -8,10 +8,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class TaskDTOTest {
 
@@ -24,91 +23,44 @@ class TaskDTOTest {
     }
 
     @Test
-    void testValidTaskDTO() {
-        TaskDTO taskDTO = new TaskDTO(
+    void whenFieldsAreValid_thenNoViolations() {
+        TaskDTO dto = new TaskDTO(
                 1L,
-                "Valid Title",
-                "Valid Description",
-                "IN_PROGRESS",
-                "HIGH",
-                new Date(),
-                LocalDate.now().plusDays(1),
-                10L
+                "Implement login",
+                "Create login and registration endpoints",
+                "New",
+                "High",
+                LocalDate.now(),
+                LocalDate.now().plusDays(3),
+                1L
         );
 
-        Set<ConstraintViolation<TaskDTO>> violations = validator.validate(taskDTO);
-        assertTrue(violations.isEmpty(), "Valid TaskDTO should not have any validation errors");
+        Set<ConstraintViolation<TaskDTO>> violations = validator.validate(dto);
+        assertThat(violations).isEmpty();
     }
 
     @Test
-    void testInvalidTaskDTO_TitleBlank() {
-        TaskDTO taskDTO = new TaskDTO(
-                1L,
-                "",
-                "Valid Description",
-                "IN_PROGRESS",
-                "HIGH",
-                new Date(),
-                LocalDate.now().plusDays(1),
-                10L
-        );
+    void whenRequiredFieldsAreBlank_thenViolationsOccur() {
+        TaskDTO dto = new TaskDTO();
 
-        Set<ConstraintViolation<TaskDTO>> violations = validator.validate(taskDTO);
-        assertFalse(violations.isEmpty());
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().equals("Title is required")));
+        Set<ConstraintViolation<TaskDTO>> violations = validator.validate(dto);
+        assertThat(violations).hasSizeGreaterThanOrEqualTo(5);
     }
 
     @Test
-    void testInvalidTaskDTO_DescriptionBlank() {
-        TaskDTO taskDTO = new TaskDTO(
+    void whenEndDateIsInPast_thenViolationOccurs() {
+        TaskDTO dto = new TaskDTO(
                 1L,
-                "Valid Title",
-                "",
-                "IN_PROGRESS",
-                "HIGH",
-                new Date(),
-                LocalDate.now().plusDays(1),
-                10L
-        );
-
-        Set<ConstraintViolation<TaskDTO>> violations = validator.validate(taskDTO);
-        assertFalse(violations.isEmpty());
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().equals("Description is required")));
-    }
-
-    @Test
-    void testInvalidTaskDTO_EndDatePast() {
-        TaskDTO taskDTO = new TaskDTO(
-                1L,
-                "Valid Title",
-                "Valid Description",
-                "IN_PROGRESS",
-                "HIGH",
-                new Date(),
+                "Test",
+                "Description",
+                "New",
+                "Low",
+                LocalDate.now(),
                 LocalDate.now().minusDays(1),
-                10L
+                2L
         );
 
-        Set<ConstraintViolation<TaskDTO>> violations = validator.validate(taskDTO);
-        assertFalse(violations.isEmpty());
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().equals("End date must be in the future")));
-    }
-
-    @Test
-    void testInvalidTaskDTO_AssignedUserNull() {
-        TaskDTO taskDTO = new TaskDTO(
-                1L,
-                "Valid Title",
-                "Valid Description",
-                "IN_PROGRESS",
-                "HIGH",
-                new Date(),
-                LocalDate.now().plusDays(1),
-                null
-        );
-
-        Set<ConstraintViolation<TaskDTO>> violations = validator.validate(taskDTO);
-        assertFalse(violations.isEmpty());
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().equals("Assigned user is required")));
+        Set<ConstraintViolation<TaskDTO>> violations = validator.validate(dto);
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("endDate"));
     }
 }

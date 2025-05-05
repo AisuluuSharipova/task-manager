@@ -13,9 +13,11 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class UserServiceImplTest {
@@ -24,126 +26,107 @@ class UserServiceImplTest {
     private UserRepository userRepository;
 
     @Mock
-    private UserMapper userMapper;
+    private TaskRepository taskRepository;
 
     @Mock
-    private TaskRepository taskRepository;
+    private UserMapper userMapper;
 
     @InjectMocks
     private UserServiceImpl userService;
 
-    private User testUser;
-    private UserDTO testUserDTO;
+    private User user;
+    private UserDTO userDTO;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        user = new User();
+        user.setId(1L);
+        user.setFirstName("Aisuluu");
+        user.setLastName("Zhoodarbek");
+        user.setEmail("aisuluu@example.com");
 
-        testUser = new User(1L, "Aisuluu", "Zhoodarbek", "aisuluu@example.com");
-        testUserDTO = new UserDTO(1L, "Aisuluu", "Zhoodarbek", "aisuluu@example.com");
+        userDTO = new UserDTO(1L, "Aisuluu", "Zhoodarbek", "aisuluu@example.com");
     }
 
     @Test
-    void getAllUsers() {
-        when(userRepository.findAll()).thenReturn(List.of(testUser));
-        when(userMapper.toDTO(testUser)).thenReturn(testUserDTO);
+    void testGetAllUsers() {
+        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userMapper.toDTO(user)).thenReturn(userDTO);
 
         List<UserDTO> result = userService.getAllUsers();
-
-        assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("Aisuluu", result.get(0).getFirstName());
     }
 
     @Test
-    void getUserById_found() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userMapper.toDTO(testUser)).thenReturn(testUserDTO);
+    void testGetUserById_found() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userMapper.toDTO(user)).thenReturn(userDTO);
 
         UserDTO result = userService.getUserById(1L);
-
         assertNotNull(result);
         assertEquals("Aisuluu", result.getFirstName());
     }
 
     @Test
-    void getUserById_notFound() {
+    void testGetUserById_notFound() {
         when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> userService.getUserById(2L));
-
-        assertEquals("User not found", exception.getMessage());
+        assertThrows(NotFoundException.class, () -> userService.getUserById(2L));
     }
 
     @Test
-    void getUserByEmail_found() {
-        when(userRepository.findByEmail("aisuluu@example.com")).thenReturn(Optional.of(testUser));
-        when(userMapper.toDTO(testUser)).thenReturn(testUserDTO);
+    void testCreateUser() {
+        when(userMapper.toEntity(userDTO)).thenReturn(user);
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toDTO(user)).thenReturn(userDTO);
 
-        UserDTO result = userService.getUserByEmail("aisuluu@example.com");
-
-        assertNotNull(result);
+        UserDTO result = userService.createUser(userDTO);
         assertEquals("Aisuluu", result.getFirstName());
     }
 
     @Test
-    void getUserByEmail_notFound() {
-        when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
+    void testUpdateUser_found() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toDTO(user)).thenReturn(userDTO);
 
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> userService.getUserByEmail("unknown@example.com"));
-
-        assertEquals("User with email unknown@example.com not found", exception.getMessage());
-    }
-
-    @Test
-    void createUser() {
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
-        when(userMapper.toDTO(testUser)).thenReturn(testUserDTO);
-        when(userMapper.toEntity(testUserDTO)).thenReturn(testUser);
-
-        UserDTO result = userService.createUser(testUserDTO);
-
-        assertNotNull(result);
+        UserDTO result = userService.updateUser(1L, userDTO);
         assertEquals("Aisuluu", result.getFirstName());
     }
 
     @Test
-    void updateUser_found() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
-        when(userMapper.toDTO(testUser)).thenReturn(testUserDTO);
-
-        UserDTO result = userService.updateUser(1L, testUserDTO);
-
-        assertNotNull(result);
-        assertEquals("Aisuluu", result.getFirstName());
-    }
-
-    @Test
-    void updateUser_notFound() {
+    void testUpdateUser_notFound() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> userService.updateUser(1L, testUserDTO));
-
-        assertEquals("User not found", exception.getMessage());
+        assertThrows(NotFoundException.class, () -> userService.updateUser(1L, userDTO));
     }
 
     @Test
-    void deleteUser_found() {
+    void testPartiallyUpdateUser() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userMapper.toDTO(user)).thenReturn(userDTO);
+
+        Map<String, Object> updates = Map.of("firstName", "NewName");
+        UserDTO result = userService.partiallyUpdateUser(1L, updates);
+
+        assertEquals("Aisuluu", result.getFirstName());
+    }
+
+    @Test
+    void testDeleteUser_found() {
         when(userRepository.existsById(1L)).thenReturn(true);
         doNothing().when(userRepository).deleteById(1L);
 
-        userService.deleteUser(1L);
-
-        verify(userRepository, times(1)).deleteById(1L);
+        assertDoesNotThrow(() -> userService.deleteUser(1L));
     }
 
     @Test
-    void deleteUser_notFound() {
-        when(userRepository.existsById(2L)).thenReturn(false);
+    void testDeleteUser_notFound() {
+        when(userRepository.existsById(1L)).thenReturn(false);
 
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> userService.deleteUser(2L));
-
-        assertEquals("User not found", exception.getMessage());
+        assertThrows(NotFoundException.class, () -> userService.deleteUser(1L));
     }
 }

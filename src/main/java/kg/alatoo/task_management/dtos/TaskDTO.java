@@ -27,7 +27,7 @@ public class TaskDTO {
     @NotBlank(message = "Priority level cannot be empty")
     private String level;
 
-    private Date creationDate;
+    private LocalDate creationDate;
 
     @NotNull(message = "End date is required")
     @Future(message = "End date must be in the future")

@@ -52,10 +52,11 @@ public class TaskServiceImpl implements TaskService {
                 taskDTO.getDescription(),
                 "New",
                 taskDTO.getLevel(),
-                new Date(System.currentTimeMillis()),
-                Date.valueOf(taskDTO.getEndDate()),
+                LocalDate.now(),
+                taskDTO.getEndDate(),
                 assignedUser
         );
+
 
         return taskMapper.toDTO(taskRepository.save(task));
     }
@@ -73,7 +74,7 @@ public class TaskServiceImpl implements TaskService {
         task.setDescription(taskDTO.getDescription());
         task.setStatus(taskDTO.getStatus());
         task.setLevel(taskDTO.getLevel());
-        task.setEndDate(Date.valueOf(taskDTO.getEndDate()));
+        task.setEndDate(taskDTO.getEndDate());
         task.setAssignedUser(assignedUser);
 
         return taskMapper.toDTO(taskRepository.save(task));
@@ -101,9 +102,9 @@ public class TaskServiceImpl implements TaskService {
                     break;
                 case "endDate":
                     if (value instanceof String) {
-                        task.setEndDate(Date.valueOf(LocalDate.parse((String) value)));
+                        task.setEndDate(LocalDate.parse((String) value));
                     } else if (value instanceof LocalDate) {
-                        task.setEndDate(Date.valueOf((LocalDate) value));
+                        task.setEndDate((LocalDate) value);
                     } else {
                         throw new IllegalArgumentException("Invalid endDate format");
                     }

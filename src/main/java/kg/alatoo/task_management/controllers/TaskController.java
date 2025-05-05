@@ -19,7 +19,7 @@ public class TaskController {
 
     private final TaskService taskService;
 
-    @GetMapping
+    @GetMapping(produces = "application/json")
     public ResponseEntity<List<TaskDTO>> getAllTasks() {
         return ResponseEntity.ok(taskService.getAllTasks());
     }

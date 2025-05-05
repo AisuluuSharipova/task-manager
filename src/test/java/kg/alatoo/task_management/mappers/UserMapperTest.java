@@ -2,6 +2,7 @@ package kg.alatoo.task_management.mappers;
 
 import kg.alatoo.task_management.dtos.UserDTO;
 import kg.alatoo.task_management.entities.User;
+import kg.alatoo.task_management.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -10,45 +11,60 @@ import static org.junit.jupiter.api.Assertions.*;
 class UserMapperTest {
 
     private UserMapper userMapper;
+    private User testUser;
+    private UserDTO testUserDTO;
 
     @BeforeEach
     void setUp() {
         userMapper = new UserMapper();
+
+        testUser = User.builder()
+                .id(1L)
+                .firstName("Aisuluu")
+                .lastName("Zhoodarbek")
+                .email("aisuluu@example.com")
+                .username("Aisuluu.Zhoodarbek")
+                .password("encodedpassword")
+                .enabled(true)
+                .role(Role.USER)
+                .build();
+
+        testUserDTO = new UserDTO(
+                1L,
+                "Aisuluu",
+                "Zhoodarbek",
+                "aisuluu@example.com"
+        );
     }
 
     @Test
-    void toDTO_shouldConvertUserToUserDTO() {
-        User user = new User(1L, "Aiss", "Zhoodarbek", "aiss@gmail.com");
+    void testToDTO() {
+        UserDTO dto = userMapper.toDTO(testUser);
 
-        UserDTO userDTO = userMapper.toDTO(user);
-
-        assertNotNull(userDTO);
-        assertEquals(user.getId(), userDTO.getId());
-        assertEquals(user.getFirstName(), userDTO.getFirstName());
-        assertEquals(user.getLastName(), userDTO.getLastName());
-        assertEquals(user.getEmail(), userDTO.getEmail());
+        assertNotNull(dto);
+        assertEquals(testUser.getId(), dto.getId());
+        assertEquals(testUser.getFirstName(), dto.getFirstName());
+        assertEquals(testUser.getLastName(), dto.getLastName());
+        assertEquals(testUser.getEmail(), dto.getEmail());
     }
 
     @Test
-    void toEntity_shouldConvertUserDTOToUser() {
-        UserDTO userDTO = new UserDTO(1L, "Aiss", "Zhoodarbek", "aiss@gmail.com");
+    void testToEntity() {
+        User entity = userMapper.toEntity(testUserDTO);
 
-        User user = userMapper.toEntity(userDTO);
+        assertNotNull(entity);
+        assertEquals(testUserDTO.getId(), entity.getId());
+        assertEquals(testUserDTO.getFirstName(), entity.getFirstName());
+        assertEquals(testUserDTO.getLastName(), entity.getLastName());
+        assertEquals(testUserDTO.getEmail(), entity.getEmail());
 
-        assertNotNull(user);
-        assertEquals(userDTO.getId(), user.getId());
-        assertEquals(userDTO.getFirstName(), user.getFirstName());
-        assertEquals(userDTO.getLastName(), user.getLastName());
-        assertEquals(userDTO.getEmail(), user.getEmail());
-    }
+        assertEquals(testUserDTO.getEmail(), entity.getUsername());
 
-    @Test
-    void toDTO_shouldReturnNullWhenUserIsNull() {
-        assertNull(userMapper.toDTO(null));
-    }
+        // Убедиться, что роль установлена
+        assertEquals(Role.USER, entity.getRole());
 
-    @Test
-    void toEntity_shouldReturnNullWhenUserDTOIsNull() {
-        assertNull(userMapper.toEntity(null));
+        assertEquals("", entity.getPassword());
+
+        assertTrue(entity.isEnabled());
     }
 }

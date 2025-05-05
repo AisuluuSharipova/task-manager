@@ -21,7 +21,7 @@ public class TaskMapper {
                 task.getStatus(),
                 task.getLevel(),
                 task.getCreationDate(),
-                task.getEndDate().toLocalDate(),
+                task.getEndDate(),
                 task.getAssignedUser() != null ? task.getAssignedUser().getId() : null
         );
     }
@@ -37,7 +37,7 @@ public class TaskMapper {
                 taskDTO.getStatus(),
                 taskDTO.getLevel(),
                 taskDTO.getCreationDate(),
-                Date.valueOf(taskDTO.getEndDate()),
+                taskDTO.getEndDate(),
                 assignedUser
         );
     }
