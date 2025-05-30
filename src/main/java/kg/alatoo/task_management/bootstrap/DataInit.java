@@ -31,25 +31,31 @@ public class DataInit {
         System.out.println("Initializing database with sample data...");
 
         User admin = User.builder()
+                .firstName("Aisuluu")
+                .lastName("Sharipova")
                 .username("Admin")
                 .email("admin@example.com")
-                .password("admin")
+                .password("admin123")
                 .enabled(true)
                 .role(Role.ADMIN)
                 .build();
 
         User aisuluu = User.builder()
-                .username("Aisuluu")
-                .email("aisuluu@gmail.com")
-                .password("password")
+                .firstName("Uulkan")
+                .lastName("Sharipova")
+                .username("UulkanSharipova")
+                .email("uulkan@gmail.com")
+                .password("uulkan123")
                 .enabled(true)
                 .role(Role.USER)
                 .build();
 
         User uulkan = User.builder()
-                .username("Uulkan")
-                .email("uulkan@gmail.com")
-                .password("password")
+                .firstName("Yusuf")
+                .lastName("Sharipov")
+                .username("YusufSharipov")
+                .email("yusuf@gmail.com")
+                .password("yusuf123")
                 .enabled(true)
                 .role(Role.USER)
                 .build();
@@ -57,8 +63,8 @@ public class DataInit {
         userRepository.saveAll(List.of(admin, aisuluu, uulkan));
 
         admin = userRepository.findByEmail("admin@example.com").orElseThrow();
-        aisuluu = userRepository.findByEmail("aisuluu@gmail.com").orElseThrow();
-        uulkan = userRepository.findByEmail("uulkan@gmail.com").orElseThrow();
+        aisuluu = userRepository.findByEmail("uulkan@gmail.com").orElseThrow();
+        uulkan = userRepository.findByEmail("yusuf@gmail.com").orElseThrow();
 
         System.out.println("Users successfully created!");
 
